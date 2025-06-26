@@ -25,7 +25,7 @@ const OPENAI_API_KEY = await input.textAsync(“Enter your OpenAI API key”);
 // some fields have more data about them than others
 // we can use this function to extract that information
 // right now, this only pulls in single/multi select options and the table that a linked record links to
-// but it could be expanded to also include details about formulas and other computed fields
+// but it could be expanded to also include details about other computed fields
 function getFieldOptions(field) {
   if (field.type === “singleSelect” || field.type === “multipleSelects”) {
     return field.options.choices
@@ -35,6 +35,19 @@ function getFieldOptions(field) {
       .join(“, “);
   } else if (field.type === “multipleRecordLinks”) {
     return base.getTable(field.options.linkedTableId).name;
+  } else if(field.type == “formula”) {
+    // formulas are weird.  You can get the fields it references which is helpful, but not much else
+    const names = field.options.referencedFieldIds
+    .map((id) => {
+      try {
+        const refField = settings.table.getField(id);
+        return refField ? refField.name : null;
+      } catch (e) {
+        return null;
+      }
+    })
+    .filter(Boolean);
+    return `References: ${names.length > 0 ? names.join(“, “) : “No fields referenced”}.  Returns: ${field.options.result.type}`;
   }
   return null;
 }
